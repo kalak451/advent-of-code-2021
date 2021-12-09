@@ -27,3 +27,10 @@ tasks.withType<KotlinCompile> {
 application {
     mainClass.set("MainKt")
 }
+
+kotlin {
+    jvmToolchain {
+        (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(17))
+        vendor.set(JvmVendorSpec.GRAAL_VM)
+    }
+}
