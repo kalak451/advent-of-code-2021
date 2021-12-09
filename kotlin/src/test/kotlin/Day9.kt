@@ -3,6 +3,7 @@ import java.io.File
 import kotlin.test.assertEquals
 
 typealias Coord = Pair<Int, Int>
+typealias Node = Triple<Int, Coord, Set<Coord>>
 
 class Day9 {
 
@@ -15,15 +16,12 @@ class Day9 {
     private fun runPart1(path: String): Int {
         val lines = File(ClassLoader.getSystemResource(path).file).readLines()
 
-        val adjacencyList = buildAdjacencyList(lines)
+        val nodeMap = buildNodeMap(lines)
 
-        val lowSum = adjacencyList.asSequence()
-            .filter { isLowPoint(it, lines) }
-            .map { (c, _) -> c }
-            .map { (x, y) -> lines[y][x].digitToInt() }
-            .map { it + 1 }
-            .sum()
-        return lowSum
+        return nodeMap.values
+            .filter { isLowPoint(it, nodeMap) }
+            .map { (c) -> c }
+            .sumOf { it + 1 }
     }
 
     @Test
@@ -34,13 +32,13 @@ class Day9 {
 
     private fun runPart2(path: String): Int {
         val lines = File(ClassLoader.getSystemResource(path).file).readLines()
-        val adjacencyMap = buildAdjacencyList(lines).toMap()
+        val adjacencyMap = buildNodeMap(lines)
 
         val alreadyVisited = mutableSetOf<Coord>()
 
-        return adjacencyMap.keys
+        return adjacencyMap.values
             .asSequence()
-            .map { c -> visitPt(c, lines, alreadyVisited, adjacencyMap) }
+            .map { visitPt(it, alreadyVisited, adjacencyMap) }
             .filter { it.isNotEmpty() }
             .map { it.size }
             .sortedDescending()
@@ -49,42 +47,38 @@ class Day9 {
     }
 
     private fun visitPt(
-        c: Coord,
-        lines: List<String>,
+        n: Node,
         alreadyVisited: MutableSet<Coord>,
-        adjacencyMap: Map<Coord, Set<Coord>>
+        nodeMap: Map<Coord, Node>
     ): Set<Coord> {
+        val (v, c, adj) = n
+
         if (alreadyVisited.contains(c)) {
             return setOf()
         }
         alreadyVisited.add(c)
-        val (x, y) = c
-
-        if (lines[y][x].digitToInt() == 9) {
+        if (v == 9) {
             return setOf()
         }
 
-        val adjacent = adjacencyMap[c]!!
-            .map { visitPt(it, lines, alreadyVisited, adjacencyMap) }
-            .fold<Set<Coord>, Set<Coord>>(setOf()) { acc, s -> acc + s }
+        val adjacent = adj
+            .map { visitPt(nodeMap[it]!!, alreadyVisited, nodeMap) }
+            .fold(setOf<Coord>()) { acc, s -> acc + s }
 
         return setOf(c) + adjacent
     }
 
 
-    private fun isLowPoint(location: Pair<Coord, Set<Coord>>, lines: List<String>): Boolean {
-        val (pt, al) = location
-        val (ptx, pty) = pt
+    private fun isLowPoint(node: Node, nodes: Map<Coord, Node>): Boolean {
+        val (v, _, al) = node
 
-        val currentValue = lines[pty][ptx].digitToInt()
-
-        return al.map { (alx, aly) -> lines[aly][alx].digitToInt() }
-            .all { currentValue < it }
+        return al.map { nodes[it]!! }
+            .all { (adjVal) -> v < adjVal }
     }
 
-    private fun buildAdjacencyList(lines: List<String>): List<Pair<Coord, Set<Coord>>> {
+    private fun buildNodeMap(lines: List<String>): Map<Coord, Node> {
         val rowIndices = lines.indices
-        val adjacencyList = rowIndices.flatMap { y ->
+        return rowIndices.flatMap { y ->
             val columnIndices = lines[y].indices
             columnIndices.map { x ->
                 val adjacent = mutableSetOf<Coord>()
@@ -105,12 +99,12 @@ class Day9 {
                     adjacent.add(Coord(x, y + 1))
                 }
 
-                Pair<Coord, Set<Coord>>(
+                Triple(
+                    lines[y][x].digitToInt(),
                     Pair(x, y),
                     adjacent
                 )
             }
-        }
-        return adjacencyList
+        }.associateBy { it.second }
     }
 }
