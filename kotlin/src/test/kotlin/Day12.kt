@@ -21,7 +21,7 @@ class Day12 {
         return results.size
     }
 
-    fun visitCavePart1(c: Cave, currentPath: List<Cave>): List<List<Cave>> {
+    private fun visitCavePart1(c: Cave, currentPath: List<Cave>): List<List<Cave>> {
         val newPath = currentPath + c
 
         if (c.isEnd()) {
@@ -33,7 +33,7 @@ class Day12 {
             .flatMap { visitCavePart1(it, newPath) }
     }
 
-    fun List<Cave>.isAllowedOnPathP1(c: Cave): Boolean {
+    private fun List<Cave>.isAllowedOnPathP1(c: Cave): Boolean {
         if (c.isBig()) {
             return true
         }
@@ -60,7 +60,7 @@ class Day12 {
         return results.size
     }
 
-    fun visitCavePart2(c: Cave, currentPath: List<Cave>): List<List<Cave>> {
+    private fun visitCavePart2(c: Cave, currentPath: List<Cave>): List<List<Cave>> {
         val newPath = currentPath + c
 
         if (c.isEnd()) {
@@ -72,7 +72,7 @@ class Day12 {
             .flatMap { visitCavePart2(it, newPath) }
     }
 
-    fun List<Cave>.isAllowedOnPathP2(c: Cave): Boolean {
+    private fun List<Cave>.isAllowedOnPathP2(c: Cave): Boolean {
         if (c.isBig()) {
             return true
         }
@@ -81,20 +81,15 @@ class Day12 {
             return false
         }
 
-        if (c.isEnd()) {
-            return true
-        }
-
         if(!this.contains(c)) {
             return true
         }
 
         return this
-            .filter { !it.isStart() }
             .filter { it.isSmall() }
             .groupBy { it }
-            .mapValues { (_, v) -> v.size }
             .values
+            .map { it.size }
             .all{it < 2}
     }
 
@@ -140,7 +135,7 @@ class Day12 {
         }
 
         override fun toString(): String {
-            return "Cave(name='$name'"
+            return "Cave(name='$name')"
         }
     }
 
