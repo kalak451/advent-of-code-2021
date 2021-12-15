@@ -1,6 +1,7 @@
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.io.File
+import java.lang.RuntimeException
 import java.util.*
 
 
@@ -9,7 +10,7 @@ class Day15 {
     @Test
     fun part1() {
         assertEquals(40, runPart1("aoc-2021-15-test.txt"))
-//        assertEquals(398, runPart1("aoc-2021-15.txt"))
+        assertEquals(398, runPart1("aoc-2021-15.txt"))
     }
 
     private fun runPart1(path: String): Int {
@@ -24,32 +25,30 @@ class Day15 {
 
 
         val knownMinCosts = mutableMapOf(Pair(Pair(0, 0), 0))
-        val stack = Stack<Pair<Pair<Int, Int>, Int>>()
-        stack.push(Pair(Pair(0, 0), 0))
+        val stack = PriorityQueue<Pair<Pair<Int, Int>, Int>>(compareBy { it.second })
+        stack.add(Pair(Pair(0, 0), 0))
 
-        while (!stack.empty()) {
-            val (c, currentCost) = stack.pop()
+        while (!stack.isEmpty()) {
+            val (c, _) = stack.poll()
 
-            if (c == Pair(xMax, yMax)) {
-                if (!knownMinCosts.containsKey(c) || knownMinCosts[c]!! > currentCost) {
-                    knownMinCosts[c] = currentCost
-                }
+            if (c == dest) {
+                return knownMinCosts[c]
             } else {
 
                 val adj = buildAdj(c, xMax, yMax)
                 adj.forEach { p ->
                     val nextVal = cave.at(p)
-                    val nextCost = nextVal + currentCost
+                    val nextCost = nextVal + knownMinCosts[c]!!
 
-                    if (!knownMinCosts.containsKey(p) || knownMinCosts[p]!! > nextCost) {
+                    if (nextCost < knownMinCosts.getOrDefault(p, Int.MAX_VALUE)) {
                         knownMinCosts[p] = nextCost
-                        stack.push(Pair(p, nextCost))
+                        stack.add(Pair(p, nextCost))
                     }
                 }
             }
         }
-
-        return knownMinCosts[dest]
+        throw RuntimeException("test")
+//        return knownMinCosts[dest]
     }
 
     private fun List<String>.at(c: Pair<Int, Int>): Int {
@@ -87,7 +86,7 @@ class Day15 {
     @Test
     fun part2() {
         assertEquals(315, runPart2("aoc-2021-15-test.txt"))
-//        assertEquals(-1, runPart2("aoc-2021-15.txt"))
+        assertEquals(2817, runPart2("aoc-2021-15.txt"))
     }
 
     private fun runPart2(path: String): Int {
