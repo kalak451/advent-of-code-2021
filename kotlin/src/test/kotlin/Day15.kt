@@ -23,7 +23,6 @@ class Day15 {
         val yMax = cave.size - 1
         val dest = Pair(xMax, yMax)
 
-
         val knownMinCosts = mutableMapOf(Pair(Pair(0, 0), 0))
         val stack = PriorityQueue<Pair<Pair<Int, Int>, Int>>(compareBy { it.second })
         stack.add(Pair(Pair(0, 0), 0))
@@ -91,17 +90,18 @@ class Day15 {
 
     private fun runPart2(path: String): Int {
         val tile = File(ClassLoader.getSystemResource(path).file).readLines()
-        val row = mutableListOf(tile, tile, tile, tile, tile)
-        (1 until 5).forEach {
-            row[it] = incrementTile(row[it - 1])
-        }
-        val firstRow = row[0].indices.map { i -> row.joinToString("") { t -> t[i] } }
 
-        val rows = mutableListOf(firstRow, firstRow, firstRow, firstRow, firstRow)
-        (1 until 5).forEach {
-            rows[it] = incrementTile(rows[it - 1])
-        }
-        val cave = rows.flatten()
+        val tileRow = generateSequence(tile){incrementTile(it)}
+            .take(5)
+            .fold(List(tile.size){""}){ acc, t ->
+                acc.zip(t).map { (a,b) -> a + b }
+            }
+
+        val cave = generateSequence(tileRow) { incrementTile(it) }
+            .take(5)
+            .flatten()
+            .toList()
+
         return calcCostIter(cave)!!
     }
 
@@ -114,7 +114,11 @@ class Day15 {
     private fun incrementCell(i: Char): Char {
         val o = i.digitToInt() + 1
 
-        return if (o == 10) '1' else o.digitToChar()
+        return if (o >= 10) {
+            (o - 9).digitToChar()
+        } else {
+            o.digitToChar()
+        }
     }
 }
 
