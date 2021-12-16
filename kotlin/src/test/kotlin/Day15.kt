@@ -1,7 +1,6 @@
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.io.File
-import java.lang.RuntimeException
 import java.util.*
 
 
@@ -15,71 +14,59 @@ class Day15 {
 
     private fun runPart1(path: String): Int {
         val cave = File(ClassLoader.getSystemResource(path).file).readLines()
-        return calcCostIter(cave)!!
+        return calcCostIter(cave)
     }
 
-    private fun calcCostIter(cave: List<String>): Int? {
+    private fun calcCostIter(cave: List<String>): Int {
         val xMax = cave[0].length - 1
         val yMax = cave.size - 1
-        val dest = Pair(xMax, yMax)
+        val start = Pair(0, 0)
+        val end = Pair(xMax, yMax)
 
-        val knownMinCosts = mutableMapOf(Pair(Pair(0, 0), 0))
-        val stack = PriorityQueue<Pair<Pair<Int, Int>, Int>>(compareBy { it.second })
-        stack.add(Pair(Pair(0, 0), 0))
+        val dist = mutableMapOf(Pair(start, 0))
+        val queue = PriorityQueue<Pair<Pair<Int, Int>, Int>>(compareBy { it.second })
+        queue.add(Pair(start, 0))
 
-        while (!stack.isEmpty()) {
-            val (c, _) = stack.poll()
+        while (!queue.isEmpty()) {
+            val (c, _) = queue.poll()
 
-            if (c == dest) {
-                return knownMinCosts[c]
+            if (c == end) {
+                return dist[c]!!
             } else {
+                cave.adj(c).forEach { p ->
+                    val newDist = cave.at(p) + dist[c]!!
 
-                val adj = buildAdj(c, xMax, yMax)
-                adj.forEach { p ->
-                    val nextVal = cave.at(p)
-                    val nextCost = nextVal + knownMinCosts[c]!!
-
-                    if (nextCost < knownMinCosts.getOrDefault(p, Int.MAX_VALUE)) {
-                        knownMinCosts[p] = nextCost
-                        stack.add(Pair(p, nextCost))
+                    if (newDist < (dist[p] ?: Int.MAX_VALUE)) {
+                        dist[p] = newDist
+                        queue.add(Pair(p, newDist))
                     }
                 }
             }
         }
-        throw RuntimeException("test")
-//        return knownMinCosts[dest]
+
+        throw RuntimeException("unable to find solution")
     }
 
     private fun List<String>.at(c: Pair<Int, Int>): Int {
         return this[c.second][c.first].digitToInt()
     }
 
-    private fun buildAdj(
+    private fun List<String>.adj(
         c: Pair<Int, Int>,
-        xMax: Int,
-        yMax: Int
-    ): Set<Coord> {
+    ): Set<Pair<Int, Int>> {
         val (x, y) = c
 
-        val adjacent = mutableSetOf<Coord>()
-
-        if (x != 0) {
-            adjacent.add(Coord(x - 1, y))
-        }
-
-        if (x != xMax) {
-            adjacent.add(Coord(x + 1, y))
-        }
-
-        if (y != 0) {
-            adjacent.add(Coord(x, y - 1))
-        }
-
-        if (y != yMax) {
-            adjacent.add(Coord(x, y + 1))
-        }
-
-        return adjacent.toSet()
+        return sequenceOf(
+            Pair(x - 1, y),
+            Pair(x + 1, y),
+            Pair(x, y - 1),
+            Pair(x, y + 1)
+        )
+            .filter { it.first >= 0 }
+            .filter { it.second >= 0 }
+            .filter { it.first < this[0].length }
+            .filter { it.second < this.size }
+            .toSet()
     }
 
     @Test
@@ -90,19 +77,21 @@ class Day15 {
 
     private fun runPart2(path: String): Int {
         val tile = File(ClassLoader.getSystemResource(path).file).readLines()
+        val cave = generateTiledCave(tile, 5, 5)
+        return calcCostIter(cave)
+    }
 
-        val tileRow = generateSequence(tile){incrementTile(it)}
-            .take(5)
-            .fold(List(tile.size){""}){ acc, t ->
-                acc.zip(t).map { (a,b) -> a + b }
+    private fun generateTiledCave(tile: List<String>, columns: Int, rows: Int): List<String> {
+        val tileRow = generateSequence(tile) { incrementTile(it) }
+            .take(columns)
+            .fold(List(tile.size) { "" }) { acc, t ->
+                acc.zip(t).map { (a, b) -> a + b }
             }
 
-        val cave = generateSequence(tileRow) { incrementTile(it) }
-            .take(5)
+        return generateSequence(tileRow) { incrementTile(it) }
+            .take(rows)
             .flatten()
             .toList()
-
-        return calcCostIter(cave)!!
     }
 
     private fun incrementTile(tile: List<String>): List<String> {
