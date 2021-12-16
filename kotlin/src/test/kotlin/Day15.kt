@@ -18,10 +18,8 @@ class Day15 {
     }
 
     private fun calcCostIter(cave: List<String>): Int {
-        val xMax = cave[0].length - 1
-        val yMax = cave.size - 1
         val start = Pair(0, 0)
-        val end = Pair(xMax, yMax)
+        val end = Pair(cave[0].length - 1, cave.size - 1)
 
         val dist = mutableMapOf(Pair(start, 0))
         val queue = PriorityQueue<Pair<Pair<Int, Int>, Int>>(compareBy { it.second })
@@ -29,10 +27,6 @@ class Day15 {
 
         while (!queue.isEmpty()) {
             val (c, _) = queue.poll()
-
-            if (c == end) {
-                return dist[c]!!
-            } else {
                 cave.adj(c).forEach { p ->
                     val newDist = cave.at(p) + dist[c]!!
 
@@ -41,10 +35,9 @@ class Day15 {
                         queue.add(Pair(p, newDist))
                     }
                 }
-            }
         }
 
-        throw RuntimeException("unable to find solution")
+        return dist[end]!!
     }
 
     private fun List<String>.at(c: Pair<Int, Int>): Int {
