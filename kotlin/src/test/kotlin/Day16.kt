@@ -1,7 +1,6 @@
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.io.File
-import java.lang.RuntimeException
 
 
 class Day16 {
@@ -75,7 +74,7 @@ class Day16 {
                         Packet(1u, 4u, 3u, listOf()),
                     )
                 ),
-                "00000".toList()
+                "00000"
             ),
             parsePacket(parseHexString("EE00D40C823060"))
         )
@@ -91,7 +90,7 @@ class Day16 {
                         Packet(2u, 4u, 20u, listOf()),
                     )
                 ),
-                "0000000".toList()
+                "0000000"
             ),
             parsePacket(parseHexString("38006F45291200"))
         )
@@ -103,36 +102,36 @@ class Day16 {
         assertEquals(
             Pair(
                 Packet(6u, 4u, 2021u, listOf()),
-                "000".toList()
+                "000"
             ),
             parsePacket(parseHexString("D2FE28"))
         )
     }
 
-    private fun parsePacket(bits: List<Char>): Pair<Packet, List<Char>> {
+    private fun parsePacket(bits: String): Pair<Packet, String> {
         val version = bitsToInt(bits.slice(0 until 3))
 
         return when (val type = bitsToInt(bits.slice(3 until 6))) {
             4UL -> {
-                val (v, remaining) = parsesLiteralPacket(bits.slice(6 until bits.size))
+                val (v, remaining) = parsesLiteralPacket(bits.slice(6 until bits.length))
                 Pair(Packet(version, type, v, listOf()), remaining)
             }
             else -> {
-                val (ps, remaining) = parseOperator(bits.slice(6 until bits.size))
+                val (ps, remaining) = parseOperator(bits.slice(6 until bits.length))
                 Pair(Packet(version, type, null, ps), remaining)
             }
         }
     }
 
-    private fun parseOperator(bits: List<Char>): Pair<List<Packet>, List<Char>> {
+    private fun parseOperator(bits: String): Pair<List<Packet>, String> {
         return when (val lengthType = bits[0]) {
-            '0' -> parseTypeZeroOperator(bits.slice(1 until bits.size))
-            '1' -> parseTypeOneOperator(bits.slice(1 until bits.size))
+            '0' -> parseTypeZeroOperator(bits.slice(1 until bits.length))
+            '1' -> parseTypeOneOperator(bits.slice(1 until bits.length))
             else -> throw RuntimeException("Invalid length type bit $lengthType")
         }
     }
 
-    private fun parseTypeZeroOperator(bits: List<Char>): Pair<List<Packet>, List<Char>> {
+    private fun parseTypeZeroOperator(bits: String): Pair<List<Packet>, String> {
         val subPacketSize = bitsToInt(bits.slice(0 until 15)).toInt()
         var subPacketBits = bits.slice(15 until 15 + subPacketSize)
         val packets = mutableListOf<Packet>()
@@ -143,13 +142,13 @@ class Day16 {
             packets.add(packet)
         }
 
-        return Pair(packets, bits.slice((subPacketSize + 15) until bits.size))
+        return Pair(packets, bits.slice((subPacketSize + 15) until bits.length))
     }
 
-    private fun parseTypeOneOperator(bits: List<Char>): Pair<List<Packet>, List<Char>> {
+    private fun parseTypeOneOperator(bits: String): Pair<List<Packet>, String> {
         val packetCount = bitsToInt(bits.slice(0 until 11)).toInt()
         val packets = mutableListOf<Packet>()
-        var subPacketBits = bits.slice(11 until bits.size)
+        var subPacketBits = bits.slice(11 until bits.length)
 
         (1..packetCount).forEach { _ ->
             val (packet, remaining) = parsePacket(subPacketBits)
@@ -161,9 +160,9 @@ class Day16 {
         return Pair(packets, subPacketBits)
     }
 
-    private fun parsesLiteralPacket(bits: List<Char>): Pair<ULong, List<Char>> {
+    private fun parsesLiteralPacket(bits: String): Pair<ULong, String> {
         var consumedBits = 0
-        val valueBits = mutableListOf<Char>()
+        var valueBits = ""
 
         var wasLast = false
 
@@ -175,10 +174,10 @@ class Day16 {
                 wasLast = true
             }
 
-            valueBits.addAll(chunk.slice(1..4))
+            valueBits += chunk.slice(1..4)
         }
 
-        return Pair(bitsToInt(valueBits), bits.slice(consumedBits until bits.size))
+        return Pair(bitsToInt(valueBits), bits.slice(consumedBits until bits.length))
     }
 
     data class Packet(
@@ -188,42 +187,42 @@ class Day16 {
         val subPackets: List<Packet>
     )
 
-    private fun parseHexString(hex: String): List<Char> {
-        return hex.flatMap { hexToBits(it) }
+    private fun parseHexString(hex: String): String {
+        return hex.map { hexToBits(it) }.joinToString("")
     }
 
-    private fun hexToBits(c: Char): List<Char> {
+    private fun hexToBits(c: Char): String {
         return when (c) {
-            '0' -> "0000".toList()
-            '1' -> "0001".toList()
-            '2' -> "0010".toList()
-            '3' -> "0011".toList()
-            '4' -> "0100".toList()
-            '5' -> "0101".toList()
-            '6' -> "0110".toList()
-            '7' -> "0111".toList()
-            '8' -> "1000".toList()
-            '9' -> "1001".toList()
-            'A' -> "1010".toList()
-            'B' -> "1011".toList()
-            'C' -> "1100".toList()
-            'D' -> "1101".toList()
-            'E' -> "1110".toList()
-            'F' -> "1111".toList()
+            '0' -> "0000"
+            '1' -> "0001"
+            '2' -> "0010"
+            '3' -> "0011"
+            '4' -> "0100"
+            '5' -> "0101"
+            '6' -> "0110"
+            '7' -> "0111"
+            '8' -> "1000"
+            '9' -> "1001"
+            'A' -> "1010"
+            'B' -> "1011"
+            'C' -> "1100"
+            'D' -> "1101"
+            'E' -> "1110"
+            'F' -> "1111"
             else -> throw RuntimeException("Invalid hex char: $c")
         }
     }
 
     @Test
     fun shouldBitToInt() {
-        assertEquals(15UL, bitsToInt(listOf('1', '1', '1', '1')))
-        assertEquals(0UL, bitsToInt(listOf('0', '0', '0', '0')))
-        assertEquals(1UL, bitsToInt(listOf('0', '0', '0', '1')))
-        assertEquals(9UL, bitsToInt(listOf('1', '0', '0', '1')))
-        assertEquals(2021UL, bitsToInt("011111100101".toList()))
+        assertEquals(15UL, bitsToInt("1111"))
+        assertEquals(0UL, bitsToInt("0000"))
+        assertEquals(1UL, bitsToInt("0001"))
+        assertEquals(9UL, bitsToInt("1001"))
+        assertEquals(2021UL, bitsToInt("011111100101"))
     }
 
-    private fun bitsToInt(bits: List<Char>): ULong {
+    private fun bitsToInt(bits: String): ULong {
         var result = 0UL
 
         bits.forEach { bit ->
