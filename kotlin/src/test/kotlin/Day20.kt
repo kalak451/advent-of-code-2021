@@ -17,6 +17,7 @@ class Day20 {
         val enhanced2 = enhanced1.enhance()
         val enhanced3 = enhanced2.enhance()
 
+        assertEquals(0, enhanced1.data.joinToString("").count { it == '.' })
         assertEquals(0, enhanced2.data.joinToString("").count { it == '#' })
         assertEquals(0, enhanced3.data.joinToString("").count { it == '.' })
     }
