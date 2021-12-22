@@ -5,32 +5,19 @@ import kotlin.test.assertEquals
 class Day21 {
     @Test
     fun part1() {
-        var rollCount = 0
         var dieValue = 1
         var gameState = GameState(9, 4)
 
         while (gameState.p1Score < 1000 && gameState.p2Score < 1000) {
-            val r1 = dieValue++
-            if (dieValue > 100) {
-                dieValue = 1
-            }
+            val r1 = 1 + (dieValue++ - 1) % 100
+            val r2 = 1 + (dieValue++ - 1) % 100
+            val r3 = 1 + (dieValue++ - 1) % 100
 
-            val r2 = dieValue++
-            if (dieValue > 100) {
-                dieValue = 1
-            }
-
-            val r3 = dieValue++
-            if (dieValue > 100) {
-                dieValue = 1
-            }
-
-            rollCount += 3
             gameState = gameState.playRound(r1, r2, r3)
         }
 
         val minScore = min(gameState.p1Score, gameState.p2Score)
-        val num = minScore * (rollCount)
+        val num = minScore * (dieValue - 1)
 
         assertEquals(998088, num)
     }
@@ -79,29 +66,17 @@ class Day21 {
 
 
     data class GameState(
-        val p1Pos: Int,
-        val p2Pos: Int,
-        val p1Score: Int = 0,
-        val p2Score: Int = 0,
-        val currentPlayer: Int = 1
+        val p1Pos: Int, val p2Pos: Int, val p1Score: Int = 0, val p2Score: Int = 0, val currentPlayer: Int = 1
     ) {
         fun playRound(d1: Int, d2: Int, d3: Int): GameState {
             val mv = d1 + d2 + d3
 
-            if (currentPlayer == 1) {
-                var pos = p1Pos + mv
-                pos %= 10
-                if (pos == 0) {
-                    pos = 10
-                }
-                return GameState(pos, p2Pos, p1Score + pos, p2Score, 2)
+            return if (currentPlayer == 1) {
+                val pos = 1 + (p1Pos + mv - 1) % 10
+                GameState(pos, p2Pos, p1Score + pos, p2Score, 2)
             } else {
-                var pos = p2Pos + mv
-                pos %= 10
-                if (pos == 0) {
-                    pos = 10
-                }
-                return GameState(p1Pos, pos, p1Score, p2Score + pos, 1)
+                val pos = 1 + (p2Pos + mv - 1) % 10
+                GameState(p1Pos, pos, p1Score, p2Score + pos, 1)
             }
         }
     }
