@@ -4,7 +4,7 @@ import java.util.*
 import kotlin.test.assertEquals
 
 class Day23 {
-    val completeBoard = listOf(
+    val completeBoardP1 = listOf(
         "#############".toList(),
         "#...........#".toList(),
         "###A#B#C#D###".toList(),
@@ -12,12 +12,33 @@ class Day23 {
         "  #########".toList()
     )
 
-    val priorityDests = mapOf(
+    val completeBoardP2 = listOf(
+        "#############".toList(),
+        "#...........#".toList(),
+        "###A#B#C#D###".toList(),
+        "  #A#B#C#D#".toList(),
+        "  #A#B#C#D#".toList(),
+        "  #A#B#C#D#".toList(),
+        "  #########".toList()
+    )
+
+    var completeBoard = completeBoardP1
+
+    val priorityDestsP1 = mapOf(
         'A' to listOf(Pair(3, 3), Pair(3, 2)),
         'B' to listOf(Pair(5, 3), Pair(5, 2)),
         'C' to listOf(Pair(7, 3), Pair(7, 2)),
         'D' to listOf(Pair(9, 3), Pair(9, 2))
     )
+
+    val priorityDestsP2 = mapOf(
+        'A' to listOf(Pair(3, 5), Pair(3, 4), Pair(3, 3), Pair(3, 2)),
+        'B' to listOf(Pair(5, 5), Pair(5, 4), Pair(5, 3), Pair(5, 2)),
+        'C' to listOf(Pair(7, 5), Pair(7, 4), Pair(7, 3), Pair(7, 2)),
+        'D' to listOf(Pair(9, 5), Pair(9, 4), Pair(9, 3), Pair(9, 2))
+    )
+
+    var priorityDests = priorityDestsP1
 
     val costs = mapOf(
         'A' to 1, 'B' to 10, 'C' to 100, 'D' to 1000
@@ -35,10 +56,61 @@ class Day23 {
         Pair(11, 1)
     )
 
-    private val validPos = listOf(
+    var validPos = listOf(
         hallways,
         priorityDests.values.flatten()
     ).flatten()
+
+    @Test
+    fun part2Test() {
+        val board = loadBoard("aoc-2021-23-test.txt")
+        val newStuff = listOf(
+        "  #D#C#B#A#".toList(),
+        "  #D#B#A#C#".toList()
+        )
+        val biggerBoard = board.take(3) + newStuff + board.drop(3)
+
+        priorityDests = priorityDestsP2
+        completeBoard = completeBoardP2
+        validPos = listOf(
+            hallways,
+            priorityDests.values.flatten()
+        ).flatten()
+
+        val r = playGame(biggerBoard)
+
+        assertEquals(44169, r!!)
+    }
+
+    @Test
+    fun part2() {
+        val board = loadBoard("aoc-2021-23.txt")
+        val newStuff = listOf(
+            "  #D#C#B#A#".toList(),
+            "  #D#B#A#C#".toList()
+        )
+        val biggerBoard = board.take(3) + newStuff + board.drop(3)
+
+        priorityDests = priorityDestsP2
+        completeBoard = completeBoardP2
+        validPos = listOf(
+            hallways,
+            priorityDests.values.flatten()
+        ).flatten()
+
+        val r = playGame(biggerBoard)
+
+        assertEquals(43226, r!!)
+    }
+
+    @Test
+    fun part1() {
+        val board = loadBoard("aoc-2021-23.txt")
+
+        val r = playGame(board)
+
+        assertEquals(16244, r!!)
+    }
 
     @Test
     fun part1Test() {
@@ -46,7 +118,7 @@ class Day23 {
 
         val r = playGame(board)
 
-        assertEquals(12521, r!!.first)
+        assertEquals(12521, r!!)
     }
 
     @Test
@@ -60,7 +132,7 @@ class Day23 {
         )
         val r = playGame(board)
 
-        assertEquals(8, r!!.first)
+        assertEquals(8, r!!)
     }
 
     @Test
@@ -74,7 +146,7 @@ class Day23 {
         )
         val r = playGame(board)
 
-        assertEquals(7008, r!!.first)
+        assertEquals(7008, r!!)
     }
 
     @Test
@@ -88,7 +160,7 @@ class Day23 {
         )
         val r = playGame(board)
 
-        assertEquals(9011, r!!.first)
+        assertEquals(9011, r!!)
     }
 
     @Test
@@ -102,7 +174,7 @@ class Day23 {
         )
         val r = playGame(board)
 
-        assertEquals(9051, r!!.first)
+        assertEquals(9051, r!!)
     }
 
     @Test
@@ -116,7 +188,7 @@ class Day23 {
         )
         val r = playGame(board)
 
-        assertEquals(12081, r!!.first)
+        assertEquals(12081, r!!)
     }
 
     @Test
@@ -130,7 +202,7 @@ class Day23 {
         )
         val r = playGame(board)
 
-        assertEquals(12481, r!!.first)
+        assertEquals(12481, r!!)
     }
 
     @Test
@@ -144,38 +216,29 @@ class Day23 {
         )
         val r = playGame(board)
 
-        assertEquals(12481, r!!.first)
+        assertEquals(12481, r!!)
     }
 
-    fun playGame(
-        board: List<List<Char>>,
-        prevCost: Long = 0L,
-        previousBoards: List<List<List<Char>>> = listOf(),
-        cache: MutableMap<Pair<List<List<Char>>?, List<List<Char>>>, Pair<Long, Int>?> = mutableMapOf()
-    ): Pair<Long, Int>? {
-        if (cache.containsKey(Pair(previousBoards.lastOrNull(), board))) {
-            return cache[Pair(previousBoards.lastOrNull(), board)]
-        }
+    fun playGame(board: List<List<Char>>): Long? {
+        val dist = mutableMapOf(Pair(board, 0L))
+        val queue = PriorityQueue<Pair<List<List<Char>>, Long>>(compareBy { it.second })
+        queue.add(Pair(board, 0))
 
-        if (board.isComplete()) {
-            return Pair(prevCost, previousBoards.size + 1)
-        }
+        while (!queue.isEmpty()) {
+            val (b, _) = queue.poll()
+            val moves = determineMoves(b)
+            moves.forEach { (points, cost) ->
+                val nb = b.move(points.first, points.second)
+                val newCost = cost + dist[b]!!
 
-        val newPrevBoards = previousBoards + setOf(board)
-        val moves = determineMoves(board)
-
-        val min = moves
-            .asSequence()
-            .map { (points, cost) -> Pair(board.move(points.first, points.second), cost) }
-            .filter { !previousBoards.contains(it.first) }
-            .mapNotNull { (newBoard, cost) ->
-                playGame(newBoard, prevCost + cost, newPrevBoards, cache)
+                if (newCost < (dist[nb] ?: Long.MAX_VALUE)) {
+                    dist[nb] = newCost
+                    queue.add(Pair(nb, newCost))
+                }
             }
-            .sortedWith(compareBy { it.first })
-            .firstOrNull()
+        }
 
-        cache[Pair(previousBoards.lastOrNull(), board)] = min
-        return min
+        return dist[completeBoard]!!
     }
 
     fun determineMoves(board: List<List<Char>>): List<Pair<Pair<Pair<Int, Int>, Pair<Int, Int>>, Int>> {
@@ -194,13 +257,13 @@ class Day23 {
         }
 
         val destinations = priorityDests[c]!!
-        if(destinations.contains(pos)) {
+        if (destinations.contains(pos)) {
             val firstBadIndex = destinations.map { board.at(it) }.indexOfFirst { it != c }
-            if(firstBadIndex < 0 || destinations.indexOf(pos) <= firstBadIndex) {
+            if (firstBadIndex < 0 || destinations.indexOf(pos) <= firstBadIndex) {
                 return listOf()
             }
         }
-        
+
         val visited = walkTree(pos, board)
 
 
@@ -226,7 +289,7 @@ class Day23 {
             val (p, _) = queue.poll()
             board.adj(p).forEach { a ->
                 val newDist = visited[p]!! + 1
-                if(newDist < visited.getOrDefault(a, Int.MAX_VALUE)) {
+                if (newDist < visited.getOrDefault(a, Int.MAX_VALUE)) {
                     visited[a] = newDist
                     queue.add(Pair(a, newDist))
                 }
@@ -276,14 +339,6 @@ class Day23 {
 
     fun List<List<Char>>.at(pos: Pair<Int, Int>): Char {
         val (x, y) = pos
-        if (x < 0 || x > 12) {
-            return ' '
-        }
-
-        if (y < 0 || y > 4) {
-            return ' '
-        }
-
         return this[y][x]
     }
 
@@ -291,10 +346,6 @@ class Day23 {
         return pos.adj().filter { (x, y) ->
             this[y][x] == '.'
         }
-    }
-
-    private fun List<List<Char>>.isComplete(): Boolean {
-        return this == completeBoard
     }
 
     fun Pair<Int, Int>.adj(): List<Pair<Int, Int>> {
