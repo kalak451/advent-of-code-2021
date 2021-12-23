@@ -1,5 +1,6 @@
 import org.junit.jupiter.api.Test
 import java.io.File
+import java.util.*
 import kotlin.test.assertEquals
 
 class Day23 {
@@ -45,7 +46,7 @@ class Day23 {
 
         val r = playGame(board)
 
-        assertEquals(12521, r)
+        assertEquals(12521, r!!.first)
     }
 
     @Test
@@ -59,7 +60,7 @@ class Day23 {
         )
         val r = playGame(board)
 
-        assertEquals(8, r)
+        assertEquals(8, r!!.first)
     }
 
     @Test
@@ -73,7 +74,7 @@ class Day23 {
         )
         val r = playGame(board)
 
-        assertEquals(7008, r)
+        assertEquals(7008, r!!.first)
     }
 
     @Test
@@ -87,7 +88,7 @@ class Day23 {
         )
         val r = playGame(board)
 
-        assertEquals(9011, r)
+        assertEquals(9011, r!!.first)
     }
 
     @Test
@@ -101,7 +102,7 @@ class Day23 {
         )
         val r = playGame(board)
 
-        assertEquals(9051, r)
+        assertEquals(9051, r!!.first)
     }
 
     @Test
@@ -115,7 +116,7 @@ class Day23 {
         )
         val r = playGame(board)
 
-        assertEquals(12081, r)
+        assertEquals(12081, r!!.first)
     }
 
     @Test
@@ -129,7 +130,7 @@ class Day23 {
         )
         val r = playGame(board)
 
-        assertEquals(12481, r)
+        assertEquals(12481, r!!.first)
     }
 
     @Test
@@ -143,21 +144,21 @@ class Day23 {
         )
         val r = playGame(board)
 
-        assertEquals(12481, r)
+        assertEquals(12481, r!!.first)
     }
 
     fun playGame(
         board: List<List<Char>>,
         prevCost: Long = 0L,
         previousBoards: List<List<List<Char>>> = listOf(),
-        cache: MutableMap<Pair<List<List<Char>>?, List<List<Char>>>, Long?> = mutableMapOf()
-    ): Long? {
+        cache: MutableMap<Pair<List<List<Char>>?, List<List<Char>>>, Pair<Long, Int>?> = mutableMapOf()
+    ): Pair<Long, Int>? {
         if (cache.containsKey(Pair(previousBoards.lastOrNull(), board))) {
             return cache[Pair(previousBoards.lastOrNull(), board)]
         }
 
-        if(board.isComplete()) {
-            return prevCost
+        if (board.isComplete()) {
+            return Pair(prevCost, previousBoards.size + 1)
         }
 
         val newPrevBoards = previousBoards + setOf(board)
@@ -170,7 +171,8 @@ class Day23 {
             .mapNotNull { (newBoard, cost) ->
                 playGame(newBoard, prevCost + cost, newPrevBoards, cache)
             }
-            .minOrNull()
+            .sortedWith(compareBy { it.first })
+            .firstOrNull()
 
         cache[Pair(previousBoards.lastOrNull(), board)] = min
         return min
@@ -186,22 +188,20 @@ class Day23 {
         pos: Pair<Int, Int>,
         board: List<List<Char>>
     ): List<Pair<Pair<Pair<Int, Int>, Pair<Int, Int>>, Int>> {
-        val c = board[pos.second][pos.first]
+        val c = board.at(pos)
         if (!c.isLetter()) {
             return listOf()
         }
 
-        val firstPriorityForC = priorityDests[c]!![0]
-        if (firstPriorityForC == pos) {
-            return listOf()
+        val destinations = priorityDests[c]!!
+        if(destinations.contains(pos)) {
+            val firstBadIndex = destinations.map { board.at(it) }.indexOfFirst { it != c }
+            if(firstBadIndex < 0 || destinations.indexOf(pos) <= firstBadIndex) {
+                return listOf()
+            }
         }
-
-        if (board.at(firstPriorityForC) == c && priorityDests[c]!![1] == pos) {
-            return listOf()
-        }
-
-        val visited = mutableMapOf<Pair<Int, Int>, Int>()
-        walkTree(pos, board, 0, visited)
+        
+        val visited = walkTree(pos, board)
 
 
         return visited
@@ -213,6 +213,26 @@ class Day23 {
             .filter { hallwayToRoomRule(pos, c, it) }
             .map { Pair(Pair(pos, it), costs[c]!! * visited[it]!!) }
             .toList()
+    }
+
+    fun walkTree(pos: Pair<Int, Int>, board: List<List<Char>>): Map<Pair<Int, Int>, Int> {
+        val visited: MutableMap<Pair<Int, Int>, Int> = mutableMapOf()
+        visited[pos] = 0
+
+        val queue = PriorityQueue<Pair<Pair<Int, Int>, Int>>(compareBy { it.second })
+        queue.add(Pair(pos, 0))
+
+        while (queue.isNotEmpty()) {
+            val (p, _) = queue.poll()
+            board.adj(p).forEach { a ->
+                val newDist = visited[p]!! + 1
+                if(newDist < visited.getOrDefault(a, Int.MAX_VALUE)) {
+                    visited[a] = newDist
+                    queue.add(Pair(a, newDist))
+                }
+            }
+        }
+        return visited.toMap()
     }
 
     private fun hallwayToRoomRule(
@@ -238,16 +258,6 @@ class Day23 {
         }
 
         return priorityDests[c]!!.map { board.at(it) }.all { it == '.' || it == c }
-    }
-
-    fun walkTree(pos: Pair<Int, Int>, board: List<List<Char>>, depth: Int, visited: MutableMap<Pair<Int, Int>, Int>) {
-        if (visited.containsKey(pos)) {
-            return
-        }
-
-        visited[pos] = depth
-
-        board.adj(pos).forEach { walkTree(it, board, depth + 1, visited) }
     }
 
     fun List<List<Char>>.move(start: Pair<Int, Int>, end: Pair<Int, Int>): List<List<Char>> {
