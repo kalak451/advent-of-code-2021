@@ -4,7 +4,7 @@ import java.util.*
 import kotlin.test.assertEquals
 
 class Day23 {
-    val completeBoardP1 = listOf(
+    private val completeBoardP1 = listOf(
         "#############".toList(),
         "#...........#".toList(),
         "###A#B#C#D###".toList(),
@@ -12,7 +12,7 @@ class Day23 {
         "  #########".toList()
     )
 
-    val completeBoardP2 = listOf(
+    private val completeBoardP2 = listOf(
         "#############".toList(),
         "#...........#".toList(),
         "###A#B#C#D###".toList(),
@@ -22,31 +22,31 @@ class Day23 {
         "  #########".toList()
     )
 
-    var completeBoard = completeBoardP1
+    private var completeBoard = completeBoardP1
 
-    val priorityDestsP1 = mapOf(
+    private val priorityDestsP1 = mapOf(
         'A' to listOf(Pair(3, 3), Pair(3, 2)),
         'B' to listOf(Pair(5, 3), Pair(5, 2)),
         'C' to listOf(Pair(7, 3), Pair(7, 2)),
         'D' to listOf(Pair(9, 3), Pair(9, 2))
     )
 
-    val priorityDestsP2 = mapOf(
+    private val priorityDestsP2 = mapOf(
         'A' to listOf(Pair(3, 5), Pair(3, 4), Pair(3, 3), Pair(3, 2)),
         'B' to listOf(Pair(5, 5), Pair(5, 4), Pair(5, 3), Pair(5, 2)),
         'C' to listOf(Pair(7, 5), Pair(7, 4), Pair(7, 3), Pair(7, 2)),
         'D' to listOf(Pair(9, 5), Pair(9, 4), Pair(9, 3), Pair(9, 2))
     )
 
-    var priorityDests = priorityDestsP1
+    private var priorityDests = priorityDestsP1
 
-    val costs = mapOf(
+    private val costs = mapOf(
         'A' to 1, 'B' to 10, 'C' to 100, 'D' to 1000
     )
 
-    val invalidDest = listOf(Pair(3, 1), Pair(5, 1), Pair(7, 1), Pair(9, 1))
+    private val invalidDest = listOf(Pair(3, 1), Pair(5, 1), Pair(7, 1), Pair(9, 1))
 
-    val hallways = listOf(
+    private val hallways = listOf(
         Pair(1, 1),
         Pair(2, 1),
         Pair(4, 1),
@@ -56,7 +56,7 @@ class Day23 {
         Pair(11, 1)
     )
 
-    var validPos = listOf(
+    private var validPos = listOf(
         hallways,
         priorityDests.values.flatten()
     ).flatten()
@@ -219,7 +219,7 @@ class Day23 {
         assertEquals(12481, r!!)
     }
 
-    fun playGame(board: List<List<Char>>): Long? {
+    private fun playGame(board: List<List<Char>>): Long? {
         val dist = mutableMapOf(Pair(board, 0L))
         val queue = PriorityQueue<Pair<List<List<Char>>, Long>>(compareBy { it.second })
         queue.add(Pair(board, 0))
@@ -241,13 +241,13 @@ class Day23 {
         return dist[completeBoard]!!
     }
 
-    fun determineMoves(board: List<List<Char>>): List<Pair<Pair<Pair<Int, Int>, Pair<Int, Int>>, Int>> {
+    private fun determineMoves(board: List<List<Char>>): List<Pair<Pair<Pair<Int, Int>, Pair<Int, Int>>, Int>> {
         return validPos
             .flatMap { determineMoves(it, board) }
             .sortedBy { it.second }
     }
 
-    fun determineMoves(
+    private fun determineMoves(
         pos: Pair<Int, Int>,
         board: List<List<Char>>
     ): List<Pair<Pair<Pair<Int, Int>, Pair<Int, Int>>, Int>> {
@@ -278,7 +278,7 @@ class Day23 {
             .toList()
     }
 
-    fun walkTree(pos: Pair<Int, Int>, board: List<List<Char>>): Map<Pair<Int, Int>, Int> {
+    private fun walkTree(pos: Pair<Int, Int>, board: List<List<Char>>): Map<Pair<Int, Int>, Int> {
         val visited: MutableMap<Pair<Int, Int>, Int> = mutableMapOf()
         visited[pos] = 0
 
@@ -323,7 +323,7 @@ class Day23 {
         return priorityDests[c]!!.map { board.at(it) }.all { it == '.' || it == c }
     }
 
-    fun List<List<Char>>.move(start: Pair<Int, Int>, end: Pair<Int, Int>): List<List<Char>> {
+    private fun List<List<Char>>.move(start: Pair<Int, Int>, end: Pair<Int, Int>): List<List<Char>> {
         return this.mapIndexed { y, row ->
             row.mapIndexed { x, col ->
                 if (x == start.first && y == start.second) {
@@ -337,18 +337,18 @@ class Day23 {
         }
     }
 
-    fun List<List<Char>>.at(pos: Pair<Int, Int>): Char {
+    private fun List<List<Char>>.at(pos: Pair<Int, Int>): Char {
         val (x, y) = pos
         return this[y][x]
     }
 
-    fun List<List<Char>>.adj(pos: Pair<Int, Int>): List<Pair<Int, Int>> {
+    private fun List<List<Char>>.adj(pos: Pair<Int, Int>): List<Pair<Int, Int>> {
         return pos.adj().filter { (x, y) ->
             this[y][x] == '.'
         }
     }
 
-    fun Pair<Int, Int>.adj(): List<Pair<Int, Int>> {
+    private fun Pair<Int, Int>.adj(): List<Pair<Int, Int>> {
         return listOf(
             Pair(first - 1, second), Pair(first, second + 1), Pair(first + 1, second), Pair(first, second - 1)
         )
