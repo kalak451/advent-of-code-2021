@@ -25,6 +25,28 @@ class Day22 {
         assertEquals(596598, onEntries)
     }
 
+    @Test
+    fun part2Test() {
+        val onEntries = runPart2("aoc-2021-22-test2.txt")
+        assertEquals(2758514936282235L, onEntries)
+    }
+
+    @Test
+    fun part2() {
+        val onEntries = runPart2("aoc-2021-22.txt")
+        assertEquals(1199121349148621L, onEntries)
+    }
+
+    private fun runPart2(path: String): Long {
+        val lines = File(ClassLoader.getSystemResource(path).file).readLines()
+        val cuboids = lines.map { mapCuboidPart2(it) }
+
+        return cuboids.fold<CuboidPart2, List<CuboidPart2>>(listOf()) { acc, cube ->
+            val generatedCubes = acc.mapNotNull { cube.intersection(it) }
+            acc + generatedCubes + if (cube.status == "on") listOf(cube) else listOf()
+        }.sumOf { it.size() }
+    }
+
     private fun runPart1(path: String): Int {
         val lines = File(ClassLoader.getSystemResource(path).file).readLines()
         val cuboids = lines.mapNotNull { mapCuboidPart1(it) }
@@ -90,4 +112,95 @@ class Day22 {
         val zRange: IntRange
     )
 
+    fun mapCuboidPart2(line: String): CuboidPart2 {
+        val mr = regex.matchEntire(line)!!
+
+        val status = mr.groupValues[1]
+        val xStart = mr.groupValues[2].toInt()
+        val xEnd = mr.groupValues[3].toInt()
+        val yStart = mr.groupValues[4].toInt()
+        val yEnd = mr.groupValues[5].toInt()
+        val zStart = mr.groupValues[6].toInt()
+        val zEnd = mr.groupValues[7].toInt()
+
+        return CuboidPart2(
+            status,
+            xStart,
+            xEnd,
+            yStart,
+            yEnd,
+            zStart,
+            zEnd,
+        )
+    }
+
+    @Test
+    fun shouldSize() {
+        val a = CuboidPart2(
+            "on",
+            0, 0,
+            0, 0,
+            0, 0
+        )
+
+        assertEquals(1, a.size())
+
+        val b = CuboidPart2(
+            "off",
+            0, 0,
+            0, 0,
+            0, 0
+        )
+
+        assertEquals(-1, b.size())
+    }
+
+    data class CuboidPart2(
+        val status: String,
+        val xStart: Int,
+        val xEnd: Int,
+        val yStart: Int,
+        val yEnd: Int,
+        val zStart: Int,
+        val zEnd: Int,
+    ) {
+        fun size(): Long {
+            return (xEnd - xStart + 1).toLong() *
+                    (yEnd - yStart + 1).toLong() *
+                    (zEnd - zStart + 1).toLong() *
+                    if (status == "on") 1L else -1L
+        }
+
+        fun intersection(other: CuboidPart2): CuboidPart2? {
+            if (
+                xStart > other.xEnd
+                || xEnd < other.xStart
+                || yStart > other.yEnd
+                || yEnd < other.yStart
+                || zStart > other.zEnd
+                || zEnd < other.zStart
+            ) {
+                return null
+            }
+
+            val overlapXStart = max(xStart, other.xStart)
+            val overlapXEnd = min(xEnd, other.xEnd)
+
+            val overlapYStart = max(yStart, other.yStart)
+            val overlapYEnd = min(yEnd, other.yEnd)
+
+            val overlapZStart = max(zStart, other.zStart)
+            val overlapZEnd = min(zEnd, other.zEnd)
+
+            return CuboidPart2(
+                if (other.status == "on") "off" else "on",
+                overlapXStart,
+                overlapXEnd,
+                overlapYStart,
+                overlapYEnd,
+                overlapZStart,
+                overlapZEnd
+            )
+        }
+    }
 }
