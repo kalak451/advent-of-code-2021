@@ -65,8 +65,8 @@ class Day23 {
     fun part2Test() {
         val board = loadBoard("aoc-2021-23-test.txt")
         val newStuff = listOf(
-        "  #D#C#B#A#".toList(),
-        "  #D#B#A#C#".toList()
+            "  #D#C#B#A#".toList(),
+            "  #D#B#A#C#".toList()
         )
         val biggerBoard = board.take(3) + newStuff + board.drop(3)
 
@@ -79,7 +79,7 @@ class Day23 {
 
         val r = playGame(biggerBoard)
 
-        assertEquals(44169, r!!)
+        assertEquals(44169, r)
     }
 
     @Test
@@ -100,7 +100,7 @@ class Day23 {
 
         val r = playGame(biggerBoard)
 
-        assertEquals(43226, r!!)
+        assertEquals(43226, r)
     }
 
     @Test
@@ -109,7 +109,7 @@ class Day23 {
 
         val r = playGame(board)
 
-        assertEquals(16244, r!!)
+        assertEquals(16244, r)
     }
 
     @Test
@@ -118,7 +118,7 @@ class Day23 {
 
         val r = playGame(board)
 
-        assertEquals(12521, r!!)
+        assertEquals(12521, r)
     }
 
     @Test
@@ -132,7 +132,7 @@ class Day23 {
         )
         val r = playGame(board)
 
-        assertEquals(8, r!!)
+        assertEquals(8, r)
     }
 
     @Test
@@ -146,7 +146,7 @@ class Day23 {
         )
         val r = playGame(board)
 
-        assertEquals(7008, r!!)
+        assertEquals(7008, r)
     }
 
     @Test
@@ -160,7 +160,7 @@ class Day23 {
         )
         val r = playGame(board)
 
-        assertEquals(9011, r!!)
+        assertEquals(9011, r)
     }
 
     @Test
@@ -174,7 +174,7 @@ class Day23 {
         )
         val r = playGame(board)
 
-        assertEquals(9051, r!!)
+        assertEquals(9051, r)
     }
 
     @Test
@@ -188,7 +188,7 @@ class Day23 {
         )
         val r = playGame(board)
 
-        assertEquals(12081, r!!)
+        assertEquals(12081, r)
     }
 
     @Test
@@ -202,7 +202,7 @@ class Day23 {
         )
         val r = playGame(board)
 
-        assertEquals(12481, r!!)
+        assertEquals(12481, r)
     }
 
     @Test
@@ -216,41 +216,24 @@ class Day23 {
         )
         val r = playGame(board)
 
-        assertEquals(12481, r!!)
+        assertEquals(12481, r)
     }
 
-    private fun playGame(board: List<List<Char>>): Long? {
-        val dist = mutableMapOf(Pair(board, 0L))
-        val queue = PriorityQueue<Pair<List<List<Char>>, Long>>(compareBy { it.second })
-        queue.add(Pair(board, 0))
-
-        while (!queue.isEmpty()) {
-            val (b, _) = queue.poll()
-            val moves = determineMoves(b)
-            moves.forEach { (points, cost) ->
-                val nb = b.move(points.first, points.second)
-                val newCost = cost + dist[b]!!
-
-                if (newCost < (dist[nb] ?: Long.MAX_VALUE)) {
-                    dist[nb] = newCost
-                    queue.add(Pair(nb, newCost))
-                }
-            }
-        }
-
-        return dist[completeBoard]!!
+    private fun playGame(board: List<List<Char>>): Long {
+        val paths = shortestPath(board) { b -> determineMoves(b) }
+        return paths[completeBoard]!!
     }
 
-    private fun determineMoves(board: List<List<Char>>): List<Pair<Pair<Pair<Int, Int>, Pair<Int, Int>>, Int>> {
+    private fun determineMoves(board: List<List<Char>>): List<Pair<List<List<Char>>, Long>> {
         return validPos
             .flatMap { determineMoves(it, board) }
-            .sortedBy { it.second }
+            .map { Pair(board.move(it.first.first, it.first.second), it.second) }
     }
 
     private fun determineMoves(
         pos: Pair<Int, Int>,
         board: List<List<Char>>
-    ): List<Pair<Pair<Pair<Int, Int>, Pair<Int, Int>>, Int>> {
+    ): List<Pair<Pair<Pair<Int, Int>, Pair<Int, Int>>, Long>> {
         val c = board.at(pos)
         if (!c.isLetter()) {
             return listOf()
@@ -264,8 +247,7 @@ class Day23 {
             }
         }
 
-        val visited = walkTree(pos, board)
-
+        val visited = shortestPath(pos) { p -> board.adj(p).map { Pair(it, 1) } }
 
         return visited
             .keys
@@ -278,24 +260,25 @@ class Day23 {
             .toList()
     }
 
-    private fun walkTree(pos: Pair<Int, Int>, board: List<List<Char>>): Map<Pair<Int, Int>, Int> {
-        val visited: MutableMap<Pair<Int, Int>, Int> = mutableMapOf()
-        visited[pos] = 0
+    private fun <T> shortestPath(start: T, adj: (T) -> List<Pair<T, Long>>): Map<T, Long> {
+        val dist: MutableMap<T, Long> = mutableMapOf()
+        dist[start] = 0
 
-        val queue = PriorityQueue<Pair<Pair<Int, Int>, Int>>(compareBy { it.second })
-        queue.add(Pair(pos, 0))
+        val queue = PriorityQueue<Pair<T, Long>>(compareBy { it.second })
+        queue.add(Pair(start, 0))
 
         while (queue.isNotEmpty()) {
-            val (p, _) = queue.poll()
-            board.adj(p).forEach { a ->
-                val newDist = visited[p]!! + 1
-                if (newDist < visited.getOrDefault(a, Int.MAX_VALUE)) {
-                    visited[a] = newDist
-                    queue.add(Pair(a, newDist))
+            val (t, _) = queue.poll()
+            adj(t).forEach { (nt, cost) ->
+                val newDist = dist[t]!! + cost
+                if (newDist < (dist[nt] ?: Long.MAX_VALUE)) {
+                    dist[nt] = newDist
+                    queue.add(Pair(nt, newDist))
                 }
             }
         }
-        return visited.toMap()
+
+        return dist.toMap()
     }
 
     private fun hallwayToRoomRule(
